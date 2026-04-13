@@ -14,6 +14,7 @@ export default class GameScene extends Phaser.Scene {
   private options: GameSceneOptions
   private player!: Phaser.Physics.Arcade.Sprite
   private playerHead?: Phaser.GameObjects.Image
+  private bgm?: Phaser.Sound.BaseSound
   private collectibles?: Phaser.Physics.Arcade.Group
   private groundGroup?: Phaser.Physics.Arcade.StaticGroup
   private isAutoPlay = false
@@ -38,6 +39,7 @@ export default class GameScene extends Phaser.Scene {
 
   preload() {
     this.load.image('player-head-photo', '/player-head.png')
+    this.load.audio('player-bgm', '/player-bgm.m4a')
   }
 
   create() {
@@ -48,6 +50,45 @@ export default class GameScene extends Phaser.Scene {
     this.createControls()
     this.createCamera()
     this.createSectionEvents()
+    this.startBackgroundMusic()
+
+    this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => {
+      this.stopBackgroundMusic()
+    })
+    this.events.once(Phaser.Scenes.Events.DESTROY, () => {
+      this.stopBackgroundMusic()
+    })
+  }
+
+  private startBackgroundMusic() {
+    if (this.bgm?.isPlaying) {
+      return
+    }
+
+    this.bgm = this.sound.add('player-bgm', {
+      loop: true,
+      volume: 0.35,
+    })
+
+    const played = this.bgm.play()
+    if (!played) {
+      // Browser autoplay policy may block audio until first user gesture.
+      this.input.once('pointerdown', () => {
+        if (!this.bgm?.isPlaying) {
+          this.bgm?.play()
+        }
+      })
+    }
+  }
+
+  private stopBackgroundMusic() {
+    if (!this.bgm) {
+      return
+    }
+
+    this.bgm.stop()
+    this.bgm.destroy()
+    this.bgm = undefined
   }
 
   setAutoPlay(value: boolean) {
