@@ -6,6 +6,7 @@ import Timeline from './components/Timeline'
 import EndScreen from './components/EndScreen'
 import { achievements, sections } from './data/achievements'
 import type { Achievement } from './types/achievement'
+import { useFullscreen } from './hooks/useFullscreen'
 import './App.css'
 
 function App() {
@@ -15,6 +16,7 @@ function App() {
   const [currentSection, setCurrentSection] = useState('School')
   const [isComplete, setIsComplete] = useState(false)
   const [gameInstanceKey, setGameInstanceKey] = useState(0)
+  const { containerRef: fullscreenRef, isFullscreen, toggle: toggleFullscreen } = useFullscreen()
 
   const progress = useMemo(
     () => Math.min(1, collectedIds.length / achievements.length),
@@ -72,17 +74,30 @@ function App() {
       </header>
 
       <main className="content-grid">
-        <section className="game-panel">
+        <section className="game-panel" ref={fullscreenRef}>
           <GameCanvas
             key={gameInstanceKey}
             achievements={achievements}
             isAutoPlay={isAutoPlay}
             isModalOpen={activeAchievement !== null}
+            isFullscreen={isFullscreen}
+            onToggleFullscreen={toggleFullscreen}
             collectedIds={collectedIds}
             onAchievementCollected={handleAchievementCollect}
             onSectionChange={handleSectionChange}
             onGameComplete={() => {}}
           />
+          <AchievementModal
+            achievement={activeAchievement}
+            onClose={handleCloseModal}
+          />
+          {isComplete && (
+            <EndScreen
+              collectedCount={collectedIds.length}
+              totalCount={achievements.length}
+              onRestart={handleRestart}
+            />
+          )}
         </section>
 
         <aside className="info-panel">
@@ -107,19 +122,6 @@ function App() {
         collectedIds={collectedIds}
         progress={progress}
       />
-
-      <AchievementModal
-        achievement={activeAchievement}
-        onClose={handleCloseModal}
-      />
-
-      {isComplete && (
-        <EndScreen
-          collectedCount={collectedIds.length}
-          totalCount={achievements.length}
-          onRestart={handleRestart}
-        />
-      )}
     </div>
   )
 }

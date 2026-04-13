@@ -8,6 +8,8 @@ interface Props {
   achievements: Achievement[]
   isAutoPlay: boolean
   isModalOpen: boolean
+  isFullscreen: boolean
+  onToggleFullscreen: () => void
   collectedIds: string[]
   onAchievementCollected: (achievement: Achievement) => void
   onSectionChange: (section: string) => void
@@ -18,6 +20,8 @@ function GameCanvas({
   achievements,
   isAutoPlay,
   isModalOpen,
+  isFullscreen,
+  onToggleFullscreen,
   collectedIds,
   onAchievementCollected,
   onSectionChange,
@@ -150,6 +154,28 @@ function GameCanvas({
         onPointerCancel={handleGestureEnd}
         onPointerLeave={handleGestureEnd}
       />
+      <button
+        className="fullscreen-btn"
+        onClick={onToggleFullscreen}
+        aria-label={isFullscreen ? 'Exit full screen' : 'Enter full screen'}
+        title={isFullscreen ? 'Exit full screen' : 'Full screen'}
+      >
+        {isFullscreen ? (
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M8 3v3a2 2 0 0 1-2 2H3" />
+            <path d="M21 8h-3a2 2 0 0 1-2-2V3" />
+            <path d="M3 16h3a2 2 0 0 1 2 2v3" />
+            <path d="M16 21v-3a2 2 0 0 1 2-2h3" />
+          </svg>
+        ) : (
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M3 7V3h4" />
+            <path d="M17 3h4v4" />
+            <path d="M21 17v4h-4" />
+            <path d="M7 21H3v-4" />
+          </svg>
+        )}
+      </button>
     </div>
   )
 }
