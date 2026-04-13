@@ -1,5 +1,10 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 
+// screen.orientation.lock is not in the standard TS lib yet
+interface ScreenOrientationWithLock extends ScreenOrientation {
+  lock?: (orientation: string) => Promise<void>
+}
+
 export function useFullscreen() {
   const containerRef = useRef<HTMLDivElement | null>(null)
   const [isFullscreen, setIsFullscreen] = useState(false)
@@ -21,9 +26,9 @@ export function useFullscreen() {
       await el.requestFullscreen({ navigationUI: 'hide' })
 
       // Request landscape on mobile devices that support the Screen Orientation API
-      const orientation = (screen as ScreenOrientationExtended).orientation
+      const orientation = screen.orientation as ScreenOrientationWithLock
       if (orientation?.lock) {
-        await orientation.lock('landscape').catch(() => {/* not available on this device */})
+        await orientation.lock('landscape').catch(() => { /* not available on this device */ })
       }
     } catch {
       // Fullscreen was denied (e.g. permissions policy)
@@ -48,9 +53,4 @@ export function useFullscreen() {
   }, [enter, exit])
 
   return { containerRef, isFullscreen, toggle }
-}
-
-// Screen Orientation lock is not in the standard TS lib yet
-interface ScreenOrientationExtended extends ScreenOrientation {
-  lock?: (orientation: OrientationLockType) => Promise<void>
 }
