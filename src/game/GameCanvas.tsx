@@ -30,6 +30,7 @@ function GameCanvas({
   const containerRef = useRef<HTMLDivElement | null>(null)
   const gameRef = useRef<Phaser.Game | null>(null)
   const sceneRef = useRef<GameScene | null>(null)
+  const wrapperRef = useRef<HTMLDivElement | null>(null)
   const dragStartRef = useRef<{ x: number; y: number } | null>(null)
   const hasTriggeredGestureJumpRef = useRef(false)
 
@@ -75,6 +76,22 @@ function GameCanvas({
       gameRef.current = null
       sceneRef.current = null
     }
+  }, [])
+
+  // Rescale Phaser whenever the wrapper container is resized (fullscreen enter/exit, orientation change)
+  useEffect(() => {
+    const wrapper = wrapperRef.current
+    if (!wrapper) return
+
+    const observer = new ResizeObserver(() => {
+      const game = gameRef.current
+      if (game) {
+        game.scale.refresh()
+      }
+    })
+
+    observer.observe(wrapper)
+    return () => observer.disconnect()
   }, [])
 
   useEffect(() => {
@@ -144,7 +161,7 @@ function GameCanvas({
   }
 
   return (
-    <div className="game-wrapper">
+    <div className="game-wrapper" ref={wrapperRef}>
       <div className="game-canvas" ref={containerRef} />
       <div
         className="gesture-overlay"

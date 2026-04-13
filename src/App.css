@@ -118,6 +118,20 @@
 .game-panel:-webkit-full-screen .game-wrapper {
   flex: 1;
   min-height: 0;
+  width: 100%;
+  height: 100%;
+}
+
+.game-panel:fullscreen .game-canvas,
+.game-panel:-webkit-full-screen .game-canvas {
+  width: 100% !important;
+  height: 100% !important;
+}
+
+.game-panel:fullscreen .game-canvas canvas,
+.game-panel:-webkit-full-screen .game-canvas canvas {
+  width: 100% !important;
+  height: 100% !important;
 }
 
 /* Modal stays on top even inside fullscreen */
