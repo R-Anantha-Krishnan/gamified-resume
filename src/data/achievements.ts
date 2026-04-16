@@ -13,7 +13,7 @@ export const achievements: Achievement[] = [
   },
   {
     id: 'a12th2016',
-    title: '12th Full A+',
+    title: '12th Full A+ (91.7%)',
     description: 'Achieved full A+ in higher secondary exams with strong focus and discipline.',
     year: '2016',
     section: 'School',
@@ -30,6 +30,7 @@ export const achievements: Achievement[] = [
     x: 1500,
     y: 356,
     isMajor: true,
+    logo: '/sri-sri-university-logo.png',
   },
   {
     id: 'rawe',
@@ -67,6 +68,7 @@ export const achievements: Achievement[] = [
     x: 2380,
     y: 356,
     isMajor: true,
+    logo: '/sri-sri-university-logo.png',
   },
   {
     id: 'joinPashushala',
@@ -77,6 +79,7 @@ export const achievements: Achievement[] = [
     x: 2580,
     y: 356,
     isMajor: true,
+    logo: '/pashushala-logo.jpg',
   },
   {
     id: 'firstSale',
@@ -86,6 +89,7 @@ export const achievements: Achievement[] = [
     section: 'Career',
     x: 2800,
     y: 300,
+    logo: '/pashushala-logo.jpg',
   },
   {
     id: 'marketing',
@@ -95,6 +99,7 @@ export const achievements: Achievement[] = [
     section: 'Career',
     x: 3040,
     y: 356,
+    logo: '/pashushala-logo.jpg',
   },
   {
     id: 'girCow',
@@ -104,6 +109,7 @@ export const achievements: Achievement[] = [
     section: 'Career',
     x: 3280,
     y: 300,
+    logo: '/pashushala-logo.jpg',
   },
   {
     id: 'selflearn',
@@ -124,6 +130,7 @@ export const achievements: Achievement[] = [
     x: 3780,
     y: 356,
     isMajor: true,
+    logo: '/zeus-learning.png',
   },
   {
     id: 'promotion',
@@ -134,6 +141,7 @@ export const achievements: Achievement[] = [
     x: 4040,
     y: 300,
     isMajor: true,
+    logo: '/zeus-learning.png',
   },
 ]
 

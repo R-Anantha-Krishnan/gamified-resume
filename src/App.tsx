@@ -14,6 +14,8 @@ function App() {
   const [activeAchievement, setActiveAchievement] = useState<Achievement | null>(null)
   const [isAutoPlay, setIsAutoPlay] = useState(false)
   const [currentSection, setCurrentSection] = useState('School')
+  const [isAwaitingFinalSequence, setIsAwaitingFinalSequence] = useState(false)
+  const [finalSequenceTrigger, setFinalSequenceTrigger] = useState(0)
   const [isComplete, setIsComplete] = useState(false)
   const [gameInstanceKey, setGameInstanceKey] = useState(0)
   const { containerRef: fullscreenRef, isFullscreen, toggle: toggleFullscreen } = useFullscreen()
@@ -25,26 +27,25 @@ function App() {
 
   const handleAchievementCollect = (achievement: Achievement) => {
     if (collectedIds.includes(achievement.id)) return
-    const nextCollectedCount = collectedIds.length + 1
-    const isLastAchievement = nextCollectedCount >= achievements.length
 
-    setCollectedIds((previous) => [...previous, achievement.id])
+    setCollectedIds((previous) => {
+      const nextCollected = [...previous, achievement.id]
+      if (nextCollected.length >= achievements.length) {
+        setIsAwaitingFinalSequence(true)
+      }
+      return nextCollected
+    })
 
     if (achievement.isMajor) {
       setActiveAchievement(achievement)
-    }
-
-    if (isLastAchievement) {
-      if (!achievement.isMajor) {
-        setIsComplete(true)
-      }
     }
   }
 
   const handleCloseModal = () => {
     setActiveAchievement(null)
-    if (collectedIds.length >= achievements.length) {
-      setIsComplete(true)
+    if (isAwaitingFinalSequence) {
+      setFinalSequenceTrigger((previous) => previous + 1)
+      setIsAwaitingFinalSequence(false)
     }
   }
 
@@ -52,9 +53,15 @@ function App() {
     setCurrentSection(section)
   }
 
+  const handleFinalSequenceComplete = () => {
+    setIsComplete(true)
+  }
+
   const handleRestart = () => {
     setCollectedIds([])
     setActiveAchievement(null)
+    setIsAwaitingFinalSequence(false)
+    setFinalSequenceTrigger(0)
     setIsComplete(false)
     setCurrentSection('School')
     setGameInstanceKey((previous) => previous + 1)
@@ -86,6 +93,8 @@ function App() {
             onAchievementCollected={handleAchievementCollect}
             onSectionChange={handleSectionChange}
             onGameComplete={() => {}}
+            startFinalSequence={finalSequenceTrigger}
+            onFinalSequenceComplete={handleFinalSequenceComplete}
           />
           <AchievementModal
             achievement={activeAchievement}

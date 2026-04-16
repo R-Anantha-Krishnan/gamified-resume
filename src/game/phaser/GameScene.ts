@@ -8,6 +8,7 @@ interface GameSceneOptions {
   onAchievementCollected: (achievement: Achievement) => void
   onSectionChange: (section: string) => void
   onGameComplete: () => void
+  onFinalSequenceComplete: () => void
 }
 
 export default class GameScene extends Phaser.Scene {
@@ -20,12 +21,14 @@ export default class GameScene extends Phaser.Scene {
   private isAutoPlay = false
   private isPaused = false
   private isGameDone = false
+  private finalSequenceActive = false
   private currentSection = 'School'
   private isProcessingJump = false
   private moveDirection = 0
   private gestureDirection = 0
   private cursors?: Phaser.Types.Input.Keyboard.CursorKeys
   private minorHighlightText?: Phaser.GameObjects.Text
+  private finalMusic?: Phaser.Sound.BaseSound
 
   constructor(options: GameSceneOptions) {
     super({ key: 'GameScene' })
@@ -40,6 +43,7 @@ export default class GameScene extends Phaser.Scene {
   preload() {
     this.load.image('player-head-photo', '/player-head.png')
     this.load.audio('player-bgm', '/player-bgm.m4a')
+    this.load.audio('final-bgm', '/Finish.mp3')
   }
 
   create() {
@@ -104,12 +108,25 @@ export default class GameScene extends Phaser.Scene {
   }
 
   resumeAutoPlay() {
+    if (this.finalSequenceActive) {
+      return
+    }
     this.isPaused = false
   }
 
   stopGame() {
     this.isGameDone = true
     this.moveDirection = 0
+
+    if (this.player) {
+      const playerBody = this.player.body as Phaser.Physics.Arcade.Body
+      playerBody.stop()
+      playerBody.setVelocity(0, 0)
+      playerBody.setAcceleration(0, 0)
+      playerBody.setAllowGravity(false)
+      playerBody.setImmovable(true)
+      playerBody.moves = false
+    }
   }
 
   private createBackground() {
@@ -201,6 +218,14 @@ export default class GameScene extends Phaser.Scene {
     drawCharacterFrame(textureB, 3)
     textureB.generateTexture('player-run-2', playerWidth, playerHeight)
 
+    const textureClimb = this.make.graphics({ x: 0, y: 0 })
+    drawCharacterFrame(textureClimb, 0)
+    textureClimb.fillStyle(0x2563eb, 1)
+    textureClimb.fillRect(18, 38, 12, 32)
+    textureClimb.fillRect(12, 36, 8, 10)
+    textureClimb.fillRect(38, 36, 8, 10)
+    textureClimb.generateTexture('player-climb', playerWidth, playerHeight)
+
     this.player = this.physics.add.sprite(120, 415, 'player-run-1')
     this.player.setSize(36, 86)
     this.player.setOffset(15, 12)
@@ -223,6 +248,13 @@ export default class GameScene extends Phaser.Scene {
       frames: [{ key: 'player-run-1' }],
       frameRate: 1,
       repeat: 0,
+    })
+
+    this.anims.create({
+      key: 'climb',
+      frames: [{ key: 'player-climb' }],
+      frameRate: 1,
+      repeat: -1,
     })
 
     this.player.play('run')
@@ -323,9 +355,21 @@ export default class GameScene extends Phaser.Scene {
       return
     }
 
-    if (this.isGameDone) {
+    if (this.isGameDone && !this.finalSequenceActive) {
       this.player.setVelocityX(0)
       this.player.stop()
+      if (this.playerHead) {
+        this.playerHead.setPosition(this.player.x, this.player.y - 52)
+      }
+      return
+    }
+
+    if (this.finalSequenceActive) {
+      if (this.playerHead) {
+        this.playerHead.setPosition(this.player.x, this.player.y - 52)
+      }
+      this.updateBackground()
+      this.maybeUpdateSection()
       return
     }
 
@@ -446,6 +490,245 @@ export default class GameScene extends Phaser.Scene {
       this.stopGame()
       this.options.onGameComplete()
     }
+  }
+
+  public startFinalSequence() {
+    if (this.finalSequenceActive) {
+      return
+    }
+
+    this.finalSequenceActive = true
+    this.isGameDone = true
+    this.isPaused = true
+    this.moveDirection = 0
+    this.stopBackgroundMusic()
+    this.playFinalMusic()
+
+    const playerBody = this.player.body as Phaser.Physics.Arcade.Body
+    playerBody.stop()
+    playerBody.setVelocity(0, 0)
+    playerBody.setAllowGravity(false)
+    playerBody.checkCollision.none = true
+    playerBody.moves = false
+
+    const centerX = 4300
+    const centerY = 260
+
+    this.cameras.main.stopFollow()
+    this.cameras.main.pan(centerX, centerY, 900, 'Sine.easeInOut')
+    this.cameras.main.zoomTo(1.07, 900)
+
+    this.tweens.add({
+      targets: this.player,
+      x: centerX,
+      y: centerY + 80,
+      duration: 1200,
+      ease: 'Power2',
+      onComplete: () => {
+        this.playFinalCelebration(centerX, centerY)
+      },
+    })
+  }
+
+  private playFinalCelebration(centerX: number, centerY: number) {
+    this.player.play('run', true)
+    this.tweens.add({
+      targets: this.player,
+      y: centerY + 60,
+      x: centerX - 10,
+      angle: -6,
+      duration: 280,
+      ease: 'Sine.easeInOut',
+      yoyo: true,
+      repeat: -1,
+    })
+
+    this.tweens.add({
+      targets: this.player,
+      y: centerY + 72,
+      duration: 700,
+      ease: 'Sine.easeInOut',
+      yoyo: true,
+      repeat: -1,
+    })
+
+    this.createCelebrationBackdrop(centerX, centerY)
+
+    const burstEvent = this.time.addEvent({
+      delay: 320,
+      repeat: 16,
+      callback: () => {
+        const offsetX = centerX + Phaser.Math.Between(-360, 360)
+        const offsetY = centerY + Phaser.Math.Between(-220, 140)
+        this.createFirecrackerBurst(offsetX, offsetY)
+      },
+    })
+
+    const titleText = this.add
+      .text(centerX, centerY - 100, 'Career Victory', {
+        fontSize: '42px',
+        color: '#f8fafc',
+        fontStyle: '800',
+        stroke: '#0f172a',
+        strokeThickness: 10,
+      })
+      .setOrigin(0.5)
+      .setAlpha(0)
+      .setDepth(15)
+
+    this.tweens.add({
+      targets: titleText,
+      alpha: 1,
+      duration: 800,
+      ease: 'Sine.easeIn',
+    })
+
+    this.time.delayedCall(6000, () => {
+      burstEvent.remove(false)
+      this.completeFinalSequence()
+    })
+  }
+
+  private createCelebrationBackdrop(centerX: number, centerY: number) {
+    const colors = [0x0f172a, 0x1e293b, 0x471b7a, 0x0f172a]
+    for (let i = 0; i < 4; i += 1) {
+      this.add
+        .rectangle(centerX, centerY, 1100 - i * 160, 560 - i * 80, colors[i], 0.25)
+        .setDepth(2)
+    }
+
+    const glowRing = this.add.circle(centerX, centerY, 220, 0xf472b6, 0.16).setDepth(3)
+    const innerRing = this.add.circle(centerX, centerY, 156, 0x38bdf8, 0.12).setDepth(3)
+    const sparkleRing = this.add.circle(centerX, centerY, 98, 0xffffff, 0.08).setDepth(4)
+
+    this.tweens.add({
+      targets: glowRing,
+      scale: 1.16,
+      alpha: 0.08,
+      duration: 1200,
+      yoyo: true,
+      repeat: -1,
+    })
+    this.tweens.add({
+      targets: innerRing,
+      alpha: 0.04,
+      duration: 1400,
+      yoyo: true,
+      repeat: -1,
+    })
+    this.tweens.add({
+      targets: sparkleRing,
+      scale: 1.12,
+      alpha: 0.02,
+      duration: 900,
+      yoyo: true,
+      repeat: -1,
+    })
+
+    for (let i = 0; i < 5; i += 1) {
+      const line = this.add.line(
+        centerX,
+        centerY,
+        0,
+        0,
+        Phaser.Math.Between(-420, 420),
+        Phaser.Math.Between(-220, 220),
+        0xffffff,
+        0.06
+      )
+      line.setLineWidth(2)
+      line.setDepth(2)
+      this.tweens.add({
+        targets: line,
+        alpha: 0,
+        duration: 1500,
+        delay: i * 120,
+        onComplete: () => line.destroy(),
+      })
+    }
+  }
+
+  private createFirecrackerBurst(x: number, y: number) {
+    const palette = [0xf87171, 0x38bdf8, 0x22c55e, 0xfacc15, 0xc084fc, 0xfa7b6e, 0xfb7185, 0x34d399]
+    const count = Phaser.Math.Between(8, 16)
+
+    for (let i = 0; i < count; i += 1) {
+      const color = Phaser.Utils.Array.GetRandom(palette)
+      const size = Phaser.Math.Between(6, 18)
+      const piece = this.add.circle(x, y, size, color, 1).setDepth(11)
+      const angle = Phaser.Math.DegToRad((360 / count) * i + Phaser.Math.Between(-24, 24))
+      const distance = Phaser.Math.Between(120, 320)
+      const duration = Phaser.Math.Between(900, 1300)
+      this.tweens.add({
+        targets: piece,
+        x: x + Math.cos(angle) * distance,
+        y: y + Math.sin(angle) * distance,
+        scale: 0.05,
+        alpha: 0,
+        duration,
+        ease: 'Cubic.easeOut',
+        onComplete: () => piece.destroy(),
+      })
+    }
+
+    const spark = this.add.star(x, y, 6, 8, 18, 0xffffff, 0.95).setDepth(12)
+    this.tweens.add({
+      targets: spark,
+      scale: 0.45,
+      alpha: 0,
+      duration: 650,
+      ease: 'Sine.easeOut',
+      onComplete: () => spark.destroy(),
+    })
+
+    const miniSparkCount = Phaser.Math.Between(2, 4)
+    for (let i = 0; i < miniSparkCount; i += 1) {
+      const miniSpark = this.add.circle(x + Phaser.Math.Between(-28, 28), y + Phaser.Math.Between(-28, 28), 3, 0xffffff, 1).setDepth(12)
+      this.tweens.add({
+        targets: miniSpark,
+        y: miniSpark.y - Phaser.Math.Between(40, 90),
+        alpha: 0,
+        duration: Phaser.Math.Between(600, 850),
+        ease: 'Sine.easeOut',
+        onComplete: () => miniSpark.destroy(),
+      })
+    }
+  }
+
+  private completeFinalSequence() {
+    this.stopFinalMusic()
+    this.options.onGameComplete()
+    this.options.onFinalSequenceComplete()
+  }
+
+  private playFinalMusic() {
+    this.finalMusic = this.sound.add('final-bgm', {
+      loop: false,
+      volume: 0.38,
+    })
+
+    const played = this.finalMusic.play()
+    if (!played) {
+      this.input.once('pointerdown', () => {
+        if (!this.finalMusic?.isPlaying) {
+          this.finalMusic?.play()
+        }
+      })
+    }
+
+    this.time.delayedCall(14000, () => {
+      this.finalMusic?.stop()
+    })
+  }
+
+  private stopFinalMusic() {
+    if (!this.finalMusic) {
+      return
+    }
+
+    this.finalMusic.stop()
+    this.finalMusic.destroy()
+    this.finalMusic = undefined
   }
 
   private showMinorAchievementHighlight(title: string) {

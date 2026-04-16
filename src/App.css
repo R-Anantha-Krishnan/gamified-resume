@@ -288,6 +288,22 @@
   box-shadow: 0 24px 80px rgba(15, 23, 42, 0.35);
 }
 
+.modal-logo {
+  display: flex;
+  justify-content: center;
+  margin-bottom: 1rem;
+}
+
+.modal-logo img {
+  width: 92px;
+  height: 92px;
+  object-fit: contain;
+  border-radius: 20px;
+  padding: 0.8rem;
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(148, 163, 184, 0.16);
+}
+
 .modal-card--end {
   text-align: center;
 }

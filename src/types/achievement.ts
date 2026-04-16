@@ -7,4 +7,5 @@ export interface Achievement {
   x: number
   y: number
   isMajor?: boolean
+  logo?: string
 }

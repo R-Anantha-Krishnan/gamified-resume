@@ -14,6 +14,8 @@ interface Props {
   onAchievementCollected: (achievement: Achievement) => void
   onSectionChange: (section: string) => void
   onGameComplete: () => void
+  startFinalSequence: number
+  onFinalSequenceComplete: () => void
 }
 
 function GameCanvas({
@@ -26,6 +28,8 @@ function GameCanvas({
   onAchievementCollected,
   onSectionChange,
   onGameComplete,
+  startFinalSequence,
+  onFinalSequenceComplete,
 }: Props) {
   const containerRef = useRef<HTMLDivElement | null>(null)
   const gameRef = useRef<Phaser.Game | null>(null)
@@ -44,6 +48,7 @@ function GameCanvas({
       onAchievementCollected,
       onSectionChange,
       onGameComplete,
+      onFinalSequenceComplete,
     })
 
     const config: Phaser.Types.Core.GameConfig = {
@@ -99,6 +104,12 @@ function GameCanvas({
       sceneRef.current.setAutoPlay(isAutoPlay)
     }
   }, [isAutoPlay])
+
+  useEffect(() => {
+    if (sceneRef.current && startFinalSequence > 0) {
+      sceneRef.current.startFinalSequence()
+    }
+  }, [startFinalSequence])
 
   // Pause autoplay during modal, resume with a delay after modal closes
   useEffect(() => {

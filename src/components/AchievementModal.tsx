@@ -44,6 +44,11 @@ function AchievementModal({ achievement, onClose }: Props) {
         onClick={(event) => event.stopPropagation()}
       >
         <p className="section-label">Achievement Unlocked</p>
+        {achievement.logo && (
+          <div className="modal-logo">
+            <img src={achievement.logo} alt={`${achievement.section} logo`} />
+          </div>
+        )}
         <h2 id="achievement-modal-title">{achievement.title}</h2>
         <p className="modal-copy">{achievement.description}</p>
         <div className="modal-meta">
